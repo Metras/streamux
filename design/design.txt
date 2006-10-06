@@ -194,9 +194,9 @@ Group Members
 =============
 
 David Anderson <dave (at) natulte.net>
+Eric Shattow <jnc+streamux (at) freematrix.org>
 
 (The following should commit an update to add themselves as people :)
-People of Freematrix Radio
 People of Radio Libre Attitude
 People of Radio Super Flux
 
