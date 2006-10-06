@@ -1,0 +1,206 @@
+                       Streamux streaming system
+                           A quick design doc
+                     October 2006   David Anderson
+
+Objective
+=========
+
+Design and implement a solid webradio streaming management
+daemon. That includes the management of the media database, the
+control over the scheduling of content, and streaming an audio stream
+to an Icecast server.
+
+We are not reimplementing Icecast. Streaming video feeds (WebTV),
+while a possibility due to similarity in the kinds of media, is not a
+goal for the initial versions of Streamux. This design document does
+not cover design and implementation of client applications using
+Streamux, only the core Streamux daemon.
+
+Streamux is not a product custom-designed for a single webradio. It is
+an independant project that happens to be designed and implemented
+with the needs of 3 webradios in mind, but is "owned" by none of them.
+
+Background
+==========
+
+Webradios are very popular nowadays, as anyone can stream their drivel
+to others for the low price of a broadband internet connection, using
+the open source streaming server Icecast
+(http://www.icecast.org/). For amateur webradio, Icecast along with a
+regular end-user music player, such as Winamp, XMMS or Beep Media
+Player, is perfectly adequate.
+
+However, for radios who want more control over the streaming process,
+this is not enough: there is no support for scheduling, no concept of
+"shows" that can be recorded and rebroadcast, and no central media
+database that radio personel can reference back to. Worst of all, a
+single person has control over the radio's streaming, and must either
+keep the player running 24/7 (thus keeping out anyone who wants to
+stream something live), or having large silent gaps between live
+shows.
+
+Webradio station management systems already exist. The two most
+notable open source systems are Rivendell, developed by Salem Radio
+Labs, and MediaBox404, developed by a group of folks (no visible
+commercial entity). They both have many shortcomings: Rivendell is the
+mother of all complexity. It offers a system in theory capable of
+doing anything, but in practice too cumbersome to use and very
+difficult to even get running. Some of the key components also have
+dependencies on the Qt graphical toolkit, making it very difficult or
+impossible to run on a server with no desktop environment.
+
+MediaBox404 is comparatively simple. It has few components, and
+depends only on an external MySQL database for metadata
+storage. However, several webradio operators have reported that
+MediaBox404 is badly designed, and as a consequence very inflexible,
+as well as quite unstable if pushed too much. It also goes too far in
+the direction of reinventing the wheel, rather than reusing tried and
+true components to speed up development and stabilization.
+
+Overview
+========
+
+Streamux's nature leads naturally to a strongly componentized
+architecture, where each component is easily swappable to achieve
+sizable changes in behaviour. Streamux is composed of the following
+components:
+
+ * The Media Database: stores metadata on all the music files
+   available to an instance of Streamux. Stored metadata includes
+   things like title, album, artist and license. It serves the
+   metadata through a search-oriented API, and serves the media files
+   themselves over HTTP.
+
+ * The Scheduler: has a set of rules on how to decide what to play,
+   consults the Media Database to discover and select tracks, and
+   drives the Streamer. The simplest Scheduler could be a flat
+   playlist, and complexity could scale all the way up to managing
+   time slots for shows, scheduling bumper tracks or commercials at
+   regular intervals.
+
+ * The Streamer: placed upstream of icecast, receives orders from the
+   Scheduler in the form of "Play the following media". It retrieves
+   the file from the Media Database over HTTP, encodes it to the
+   specifications for broadcasting, and sends the stream to an icecast
+   server.
+
+ * The Authenticator: interfaces with some kind of authentication and
+   authorization database, lets other components easily authenticate
+   users and verify that they have the permissions required to carry
+   out certain actions.
+
+ * The Configurator: manages the global configuration of the system
+   from a central location, and serves values up to the other
+   components when needed. It can also trigger an application-wide
+   configuration reload, to change the behaviour of the system without
+   a restart.
+
+ * The Facade: presents a SOAP web service to the outside world. This
+   interface allows querying of the Streamux components by third party
+   applications. Not all internal interface methods are available to
+   outside requestors, and some operations may require authentication
+   and authorization by the Authenticator. One use of this Facade
+   could be to integrate radio information into a web application.
+
+Learning from the mistakes of the previous systems, Streamux leverages
+existing and proven technologies to manage a webradio's airtime.
+
+ * The Streamer is a very thin wrapper and client to MPD (Music Player
+   Daemon). MPD manages both the decoding of media files and their
+   reencoding into the stream format. We also use mpd's playlist as a
+   basic play queue. That way we avoid the complex task of
+   implementing an efficient multi-format transcoder.
+
+ * An HTTP webserver to serve the music files from the media database
+   to the streamer or end-user. Using a standard protocol allows the
+   Streamer (MPD) to access files directly from anywhere on the
+   network without a networked filesystem, and may also be used to
+   give listeners access to individual tracks. At first, the Media
+   Database will implement a basic HTTP server itself, but integration
+   with Apache HTTPd and/or LightTPD is strongly desired.
+
+ * Use of a SOAP API to expose a programmatic view of Streamux makes
+   use of existing code implementing SOAP client interfaces and SOAP
+   application servers. Using a popular RPC protocol also ensures that
+   Streamux will not be shunned by the world for using some weird
+   inhouse interface.
+
+Detailed Design
+===============
+
+TBD
+
+Code Location
+=============
+
+The source code and issue tracker are currently hosted at Google Code,
+under the 'streamux' project name:
+
+http://code.google.com/p/streamux
+
+The Subversion repository is accessible anonymously at:
+
+http://streamux.googlecode.com/svn/trunk/
+
+The same URL with an https scheme is for commiters to the project
+only.
+
+Group Members
+=============
+
+David Anderson <dave (at) natulte.net>
+
+(The following should commit an update to add themselves as people :)
+People of Freematrix Radio
+People of Radio Libre Attitude
+People of Radio Super Flux
+
+Security and Privacy Considerations
+===================================
+
+TBD
+
+Testing Plan
+============
+
+The components will be tested individually and in integration using
+the PyUnit testing framework. There will be at least unit tests for
+the components and full system "blackbox" tests. Over time, as bugs
+appear in released code, regression tests will also be added.
+
+I18n Plan
+=========
+
+Due to its nature as a daemon serving mostly user-submitted data, i18n
+mostly takes care of itself. The primary language for development is
+english, and user strings should be handled as UTF-8 sequences to
+preserve whatever locale the users of Streamux wish to use in media
+labelling etc.
+
+Other than that, no i18n framework should be required, and thus none
+is currently planned for.
+
+Documentation Plan
+==================
+
+User documentation includes building and installing Streamux, setting
+up a webradio stream and using various tools to drive Streamux. Over
+time as problems emerged, a troubleshooting guide may be added, as
+well as an FAQ section.
+
+Developer documentation includes internal code documentation, this
+design document and specifications of the SOAP facade.
+
+The code should be rigorously documented. All interfaces,
+implementations and methods shall be documented according to PEPs 8
+and 257.
+
+Work Estimates
+==============
+
+TBD
+
+Launch Plans
+============
+
+TBD
