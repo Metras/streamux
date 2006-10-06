@@ -60,10 +60,9 @@ true components to speed up development and stabilization.
 Overview
 ========
 
-Streamux's nature leads naturally to a strongly componentized
-architecture, where each component is easily swappable to achieve
-sizable changes in behaviour. Streamux is composed of the following
-components:
+Streamux's nature leads to a strongly componentized architecture,
+where each component is easily swappable to achieve sizable changes in
+behaviour. Streamux is composed of the following components:
 
  * The Media Database: stores metadata on all the music files
    available to an instance of Streamux. Stored metadata includes
@@ -89,18 +88,15 @@ components:
    users and verify that they have the permissions required to carry
    out certain actions.
 
- * The Configurator: manages the global configuration of the system
-   from a central location, and serves values up to the other
-   components when needed. It can also trigger an application-wide
-   configuration reload, to change the behaviour of the system without
-   a restart.
-
  * The Facade: presents a SOAP web service to the outside world. This
    interface allows querying of the Streamux components by third party
    applications. Not all internal interface methods are available to
    outside requestors, and some operations may require authentication
    and authorization by the Authenticator. One use of this Facade
    could be to integrate radio information into a web application.
+
+Components of Streamux not externalized will be implemented in the
+Python programming language.
 
 Learning from the mistakes of the previous systems, Streamux leverages
 existing and proven technologies to manage a webradio's airtime.
@@ -125,13 +121,59 @@ existing and proven technologies to manage a webradio's airtime.
    Streamux will not be shunned by the world for using some weird
    inhouse interface.
 
-Components of Streamux not externalized will be implemented in the
-Python programming language.
-
 Detailed Design
 ===============
 
-TBD
+Components in Streamux are implementations of defined
+interfaces. Since Python has no builtin meaning for an interface, we
+will simply use stub classes. Classes derived from these stubs are
+implementations of the interfaces.
+
+Exactly one implementation of each interface must be provided. As an
+exception, more than one Facade implementation may be provided, to
+provide different external programming interfaces. By default, a
+single Facade is provided, implementing a SOAP API.
+
+All components should be implemented to be reentrant. Each Facade gets
+its own thread (or even threadpool, depending on its strategy), so
+several threads could be frolicking in your code simultaneously. The
+python threading library should be used to get reliable locking and
+queuing mechanisms as needed.
+
+ Initialization
+ --------------
+
+When Streamux loads, it opens its runtime configuration file and
+passes it to a factory. The factory concerns itself only with the
+factory section of the configuration file, which looks like this:
+
+[factory]
+MediaBase = streamux.mediabase.SqliteMediaBase
+Scheduler = streamux.scheduler.PlaylistScheduler
+Streamer = streamux.streamer.MpdStreamer
+Authenticator = streamux.auth.EasyAuthenticator
+Facade = streamux.facade.SOAPFacade
+
+The factory imports each of these classes. Then, it instantiates and
+initializes each of these interfaces, in a determined order:
+
+ * Streamer
+ * MediaBase
+ * Scheduler
+ * Authenticator
+ * Facades
+
+During its initialization, each component should verify its
+configuration and get itself into a "ready to run" state: establish
+database connections, verify presence of icecast server, ...
+
+If all goes well and all components initialize successfully, the
+factory then calls the run() method on each component. It is the
+component's choice what should be done in this method. Facades will
+want to create threads to handle incoming clients for example.
+
+The Scheduler's run() method is called last. If the Scheduler returns
+from its run() method, Streamux will shutdown.
 
 Code Location
 =============
