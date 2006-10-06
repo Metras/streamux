@@ -125,6 +125,9 @@ existing and proven technologies to manage a webradio's airtime.
    Streamux will not be shunned by the world for using some weird
    inhouse interface.
 
+Components of Streamux not externalized will be implemented in the
+Python programming language.
+
 Detailed Design
 ===============
 
