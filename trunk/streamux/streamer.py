@@ -29,6 +29,7 @@ class MpdRunner(object):
                              for x in xrange(8)])
     self._rundir = tempfile.mkdtemp(".run","mpd_")
     self._config = { 'port':str(self.port),
+                     'password':"%s@read,add,control,admin" % self.password,
                      'music_directory':self._rundir,
                      'playlist_directory':self._rundir,
                      'log_file':os.path.join(self._rundir, 'log'),
@@ -68,7 +69,6 @@ class MpdRunner(object):
     directory, and return the path to the file."""
     stream_config = "audio_output {\n%s}" % self._dict_to_mpd_config(self._stream)
     config = self._dict_to_mpd_config(self._config) + stream_config
-    print config
     fd, config_fname = tempfile.mkstemp(".conf", "mpd", self._rundir, text=True)
     os.write(fd, config)
     os.close(fd)
@@ -102,12 +102,19 @@ class MpdRunner(object):
     p.wait()
     self._mpd.wait()
 
-    # Delete everything in the runtime mpd directory.
+    # Delete everything in the runtime mpd directory, ignoring errors
+    # at this stage.
     for root,dirs,files in os.walk(self._rundir, topdown=False):
       for name in files:
-        os.remove(os.path.join(root, name))
+        try:
+          os.remove(os.path.join(root, name))
+        except:
+          pass
       for name in dirs:
-        os.rmdir(os.path.join(root, name))
+        try:
+          os.rmdir(os.path.join(root, name))
+        except:
+          pass
     os.rmdir(self._rundir)
 
 
@@ -139,7 +146,8 @@ class Streamer(object):
     """Remove tracks that have already been played from the
     playlist."""
     c = self._client.currentsong()
-    print c.pos
+    for _ in xrange(int(c.pos)):
+      self._client.delete(0)
 
   def add(self, track_url):
     """Add an URI to the playlist."""
