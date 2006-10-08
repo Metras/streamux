@@ -88,7 +88,7 @@ behaviour. Streamux is composed of the following components:
    users and verify that they have the permissions required to carry
    out certain actions.
 
- * The Facade: presents a SOAP web service to the outside world. This
+ * The Facade: presents a REST API to the outside world. This
    interface allows querying of the Streamux components by third party
    applications. Not all internal interface methods are available to
    outside requestors, and some operations may require authentication
@@ -111,32 +111,21 @@ existing and proven technologies to manage a webradio's airtime.
    to the streamer or end-user. Using a standard protocol allows the
    Streamer (MPD) to access files directly from anywhere on the
    network without a networked filesystem, and may also be used to
-   give listeners access to individual tracks. At first, the Media
-   Database will implement a basic HTTP server itself, but integration
-   with Apache HTTPd and/or LightTPD is strongly desired.
+   give listeners access to individual tracks.
 
- * Use of a SOAP API to expose a programmatic view of Streamux makes
-   use of existing code implementing SOAP client interfaces and SOAP
-   application servers. Using a popular RPC protocol also ensures that
+ * Use of a REST-based API to expose a programmatic view of Streamux
+   makes use of existing code implementing HTTP clients and servers,
+   as well as XML parsers. Using a popular protocol/principle (or
+   whatever the hell REST could be called) also ensures that
    Streamux will not be shunned by the world for using some weird
-   inhouse interface.
+   inhouse UI.
 
 Detailed Design
 ===============
 
-Components in Streamux are implementations of defined
-interfaces. Since Python has no builtin meaning for an interface, we
-will simply use stub classes. Classes derived from these stubs are
-implementations of the interfaces.
-
-Exactly one implementation of each interface must be provided. As an
-exception, more than one Facade implementation may be provided, to
-provide different external programming interfaces. By default, a
-single Facade is provided, implementing a SOAP API.
-
-All components should be implemented to be reentrant. Each Facade gets
-its own thread (or even threadpool, depending on its strategy), so
-several threads could be frolicking in your code simultaneously. The
+All components should be implemented to be reentrant. The Facade
+starts its own thread (or even threadpool, assume nothing), so several
+threads could be frolicking in Streamux code simultaneously. The
 python threading library should be used to get reliable locking and
 queuing mechanisms as needed.
 
@@ -144,36 +133,21 @@ queuing mechanisms as needed.
  --------------
 
 When Streamux loads, it opens its runtime configuration file and
-passes it to a factory. The factory concerns itself only with the
-factory section of the configuration file, which looks like this:
-
-[factory]
-MediaBase = streamux.mediabase.SqliteMediaBase
-Scheduler = streamux.scheduler.PlaylistScheduler
-Streamer = streamux.streamer.MpdStreamer
-Authenticator = streamux.auth.EasyAuthenticator
-Facade = streamux.facade.SOAPFacade
-
-The factory imports each of these classes. Then, it instantiates and
-initializes each of these interfaces, in a determined order:
+starts building a complete Streamux system instanciating each
+component in the following order:
 
  * Streamer
  * MediaBase
  * Scheduler
  * Authenticator
- * Facades
+ * Facade
 
-During its initialization, each component should verify its
-configuration and get itself into a "ready to run" state: establish
-database connections, verify presence of icecast server, ...
-
-If all goes well and all components initialize successfully, the
-factory then calls the run() method on each component. It is the
-component's choice what should be done in this method. Facades will
-want to create threads to handle incoming clients for example.
-
-The Scheduler's run() method is called last. If the Scheduler returns
-from its run() method, Streamux will shutdown.
+Each component is passed a handle to the configuration, and should
+verify it, then set itself up and be ready to do whatever it
+does. Each component may, during its initialization, assume the
+presence of the components initialized before it. Initialized
+components are passed to each later component, who can keep a
+reference to it if needed.
 
 Code Location
 =============
@@ -199,11 +173,6 @@ Eric Shattow <jnc+streamux (at) freematrix.org>
 (The following should commit an update to add themselves as people :)
 People of Radio Libre Attitude
 People of Radio Super Flux
-
-Security and Privacy Considerations
-===================================
-
-TBD
 
 Testing Plan
 ============
