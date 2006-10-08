@@ -138,9 +138,11 @@ class Streamer(object):
                                       password=self._mpd_runner.password)
 
     # Clear any existing playlist
+    self._last_track_id = -1
     self._client.clear()
     self._client.random(0)
     self._client.repeat(0)
+    self._client.crossfade(2)
 
   def _prune_playlist(self):
     """Remove tracks that have already been played from the
@@ -155,10 +157,42 @@ class Streamer(object):
     s = self._client.status()
     if s.state != "play":
       self._client.play(0)
+      self.status()
     self._prune_playlist()
 
   def next(self):
     """Start playing the next track in the list immediately, without
-    waiting for the previous one to end."""
+    waiting for the previous one to end. This also calls status(), so
+    that future calls to it don't notify of this track change, as it
+    is known already."""
     self._client.next()
     self._prune_playlist()
+    self.status()
+
+  def status(self):
+    """Return a 4-tuple giving a status summary of the streamer:
+    (playing, play_url, songs_in_queue, track_changed). playing is a
+    boolean indicating whether something is currently streaming,
+    play_url gives the URL of the currently playing (or previously
+    playing if stopped) entry, songs_in_queue gives the number of
+    entries in the queue *after* the current one, and track_changed is
+    a boolean indicating whether the track currently playing has
+    changed since the last call to status()."""
+    s = self._client.status()
+    c = self._client.currentsong()
+    if s.state == "play":
+      playing = True
+      songs_in_queue = int(s.playlistlength) - int(s.song) - 1
+      if self._last_track_id != s.songid:
+        self._last_track_id = s.songid
+        track_changed = True
+      else:
+        track_changed = False
+      fname = c.file
+    else:
+      playing = False
+      songs_in_queue = int(s.playlistlength)
+      track_changed = False
+      fname = ""
+
+    return (playing, songs_in_queue, fname, track_changed)

@@ -24,17 +24,23 @@ print "Streamer booted, adding HardRadio to the playlist and starting playback"
 print ("MPD is running on port %d , using password %s "
        "(not supposed to tell you this, but useful for debugging)" %
        (s._mpd_runner.port, s._mpd_runner.password))
+print "ncmpc -p %d -P %s" % (s._mpd_runner.port, s._mpd_runner.password)
+
+raw_input("Hit enter to continue...")
+
 s.add("http://207.44.200.158:80/hard.ogg")
+s.add("http://ogg.smgradio.com/vx160.ogg")
+s.add("http://207.44.200.158:80/hard.ogg")
+s.add("http://ogg.smgradio.com/vx160.ogg")
 
-print "Playing for 15 seconds..."
-time.sleep(15)
+print "Playing each enqueued URL for 10 seconds before switching to the next..."
+while True:
+  print "Currently playing '%s'" % s.status()[2]
+  time.sleep(10)
+  playing, n_tracks, url, changed = s.status()
+  if not n_tracks:
+    break
+  s.next()
 
-print "Adding Radio Rivendell to the list and staying 15 more seconds on HardRadio..."
-s.add("http://82.182.121.75:8003/")
-time.sleep(15)
-
-print "Switching to Radio Rivendell for 15 seconds..."
-s.next()
-time.sleep(15)
-
+print "All tracks have been played 5 seconds!"
 print "Shutting down."
