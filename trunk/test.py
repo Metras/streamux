@@ -15,6 +15,9 @@ m.run()
 
 print "Running MPD from %s, on port %d" % (m._rundir, m._port)
 print "Sleeping for 60 seconds..."
-time.sleep(60)
+try:
+  time.sleep(60)
+except:
+  pass
 print "Shutting down MPD and clearing up"
 m.stop()
