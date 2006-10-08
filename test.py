@@ -21,13 +21,16 @@ conf.read(sys.argv[1])
 s = Streamer(conf)
 
 print "Streamer booted, adding HardRadio to the playlist and starting playback"
+print ("MPD is running on port %d , using password %s "
+       "(not supposed to tell you this, but useful for debugging)" %
+       (s._mpd_runner.port, s._mpd_runner.password))
 s.add("http://207.44.200.158:80/hard.ogg")
 
 print "Playing for 15 seconds..."
 time.sleep(15)
 
 print "Adding Radio Rivendell to the list and staying 15 more seconds on HardRadio..."
-s.add("http://213.83.63.195:8003")
+s.add("http://82.182.121.75:8003/")
 time.sleep(15)
 
 print "Switching to Radio Rivendell for 15 seconds..."
