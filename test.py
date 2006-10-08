@@ -3,21 +3,35 @@ import os.path
 import sys
 import time
 import atexit
+import ConfigParser
 
-from streamux.streamer import MpdRunner
+sys.path.append(os.path.abspath('libs'))
 
-# Icecast stream configuration
-c = {'mount':'/streamux.ogg', 'password':'Rie4alau'}
+from streamux.streamer import Streamer
+
+if len(sys.argv) != 2:
+  print "Usage: %s <configuration file>" % os.path.basename(sys.argv[0])
+  sys.exit(1)
+
+# Load configuration file
+conf = ConfigParser.SafeConfigParser()
+conf.read(sys.argv[1])
 
 # Create an MpdRunner
-m = MpdRunner(c, mpd_bin='/home/danderson/pythonstuff/streamux/mpd/mpd')
-m.run()
+s = Streamer(conf)
 
-print "Running MPD from %s, on port %d" % (m._rundir, m._port)
-print "Sleeping for 60 seconds..."
-try:
-  time.sleep(60)
-except:
-  pass
-print "Shutting down MPD and clearing up"
-m.stop()
+print "Streamer booted, adding HardRadio to the playlist and starting playback"
+s.add("http://207.44.200.158:80/hard.ogg")
+
+print "Playing for 15 seconds..."
+time.sleep(15)
+
+print "Adding Radio Rivendell to the list and staying 15 more seconds on HardRadio..."
+s.add("http://213.83.63.195:8003")
+time.sleep(15)
+
+print "Switching to Radio Rivendell for 15 seconds..."
+s.next()
+time.sleep(15)
+
+print "Shutting down."
