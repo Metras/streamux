@@ -7,6 +7,10 @@ import tempfile
 import os.path
 import subprocess
 import signal
+import atexit
+import time
+
+import mpdclient2
 
 import streamux.error
 
@@ -20,9 +24,11 @@ class MpdRunner(object):
   def __init__(self, stream_config, mpd_bin="mpd"):
     """Initialize a runner with an empty configuration."""
     self._mpd_bin = mpd_bin
-    self._port = random.randint(10000,65000)
+    self.port = random.randint(10000,65000)
+    self.password = ''.join([random.choice("abcdefghijkmnopqrstuvwxyz0123456789")
+                             for x in xrange(8)])
     self._rundir = tempfile.mkdtemp(".run","mpd_")
-    self._config = { 'port':str(self._port),
+    self._config = { 'port':str(self.port),
                      'music_directory':self._rundir,
                      'playlist_directory':self._rundir,
                      'log_file':os.path.join(self._rundir, 'log'),
@@ -84,6 +90,8 @@ class MpdRunner(object):
                                  stdout=nothing,
                                  stderr=nothing,
                                  env={})
+    # Give MPD a moment or two to get settled in...
+    time.sleep(2)
 
   def stop(self):
     """Stop the previously started MPD instance and remove its
@@ -101,3 +109,48 @@ class MpdRunner(object):
       for name in dirs:
         os.rmdir(os.path.join(root, name))
     os.rmdir(self._rundir)
+
+
+class Streamer(object):
+  """Main streamer class. Takes a configuration file and creates an
+  MPD instance ready to stream."""
+
+  def __init__(self, config):
+    streamer_config = dict(config.items('streamer'))
+
+    if streamer_config.has_key('mpd'):
+      mpd = config.get('streamer', 'mpd')
+      del streamer_config['mpd']
+    else:
+      mpd = 'mpd'
+
+    self._mpd_runner = MpdRunner(streamer_config, mpd_bin=mpd)
+    self._mpd_runner.run()
+    atexit.register(self._mpd_runner.stop)
+    self._client = mpdclient2.connect(port=self._mpd_runner.port,
+                                      password=self._mpd_runner.password)
+
+    # Clear any existing playlist
+    self._client.clear()
+    self._client.random(0)
+    self._client.repeat(0)
+
+  def _prune_playlist(self):
+    """Remove tracks that have already been played from the
+    playlist."""
+    c = self._client.currentsong()
+    print c.pos
+
+  def add(self, track_url):
+    """Add an URI to the playlist."""
+    self._client.add(track_url)
+    s = self._client.status()
+    if s.state != "play":
+      self._client.play(0)
+    self._prune_playlist()
+
+  def next(self):
+    """Start playing the next track in the list immediately, without
+    waiting for the previous one to end."""
+    self._client.next()
+    self._prune_playlist()
