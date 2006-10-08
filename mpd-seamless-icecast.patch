@@ -1,0 +1,19 @@
+Index: src/audioOutputs/audioOutput_shout.c
+===================================================================
+--- src/audioOutputs/audioOutput_shout.c	(revision 4879)
++++ src/audioOutputs/audioOutput_shout.c	(working copy)
+@@ -382,11 +382,9 @@
+ 
+ static void myShout_closeDevice(AudioOutput * audioOutput)
+ {
+-	ShoutData *sd = (ShoutData *) audioOutput->data;
+-
+-	myShout_closeShoutConn(sd);
+-
+-	audioOutput->open = 0;
++  /* Do sod all here, to trick mpd into actually leaving the shoutcast
++   * channel open, muahahah. */
++  return;
+ }
+ 
+ #define addTag(name, value) { \
