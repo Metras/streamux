@@ -1,0 +1,25 @@
+[streamer]
+mpd = /path/to/the/mpd/static/build/binary
+mount = /icecast_mount_point.ogg
+password = <icecast password>
+
+## Here are other streamer directives that can be provided. These
+## change the Icecast client's configuration. The values given below
+## are the defaults.
+
+## Name of the radio
+#name = Streamux
+## Host where the Icecast server is running
+#host = localhost
+## Icecast server port
+#port = 8000
+## Ogg Vorbis encoding quality
+#quality = 5.0
+## Encoding format: 44.1KHz, 16bit, stereo
+#format = 44100:16:2
+## Username for the Icecast source client
+#user = source
+## Description of your radio
+#description = Powered by Streamux
+## Genre of music streamed
+#genre = Various
