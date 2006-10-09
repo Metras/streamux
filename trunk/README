@@ -1,0 +1,20 @@
+Streamux Developer's Guide to Boostrapping
+==========================================
+
+Before you can run the current Streamux code, you need to build a copy
+of MPD with a patch to enable seamless icecast playback. The script
+build-static-mpd.sh does this for you, by checking out trunk MPD,
+applying the patch, and compiling MPD statically.
+
+This means you can then drop the mpd binary on a server, and have full
+file decoding and shoutcast streaming, without installing anything
+else.
+
+Once the binary is built, make a copy of streamux.conf.dist and
+customize it to your local configuration.
+
+With that, you're ready to go. Just run `python2.4 test.py
+streamux.conf` to boot the current Streamux code into a test scenario.
+
+Have fun!
+- Dave
