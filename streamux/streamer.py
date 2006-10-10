@@ -82,16 +82,16 @@ class MpdRunner(object):
 
     self._config_fname = self._build_mpd_config()
     nothing = open('/dev/null', 'r+')
-    self._mpd = subprocess.Popen(['mpd.streamux', self._config_fname],
-                                 executable=self._mpd_bin,
-                                 close_fds=True,
-                                 cwd=self._rundir,
-                                 stdin=nothing,
-                                 stdout=nothing,
-                                 stderr=nothing,
-                                 env={})
-    # Give MPD a moment or two to get settled in...
-    time.sleep(2)
+    mpd = subprocess.Popen(['mpd.streamux', self._config_fname],
+                           executable=self._mpd_bin,
+                           close_fds=True,
+                           cwd=self._rundir,
+                           stdin=nothing,
+                           stdout=nothing,
+                           stderr=nothing,
+                           env={})
+    # Wait for the parent MPD process to fork off
+    mpd.wait()
 
   def stop(self):
     """Stop the previously started MPD instance and remove its
@@ -100,7 +100,6 @@ class MpdRunner(object):
       raise StreamuxStreamerError
     p = subprocess.Popen([self._mpd_bin, "--kill", self._config_fname])
     p.wait()
-    self._mpd.wait()
 
     # Delete everything in the runtime mpd directory, ignoring errors
     # at this stage.
