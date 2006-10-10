@@ -77,7 +77,7 @@ class MpdRunner(object):
   def run(self):
     """Build the MPD configuration and start an MPD instance with that
     config."""
-    if hasattr(self, "_pid"):
+    if hasattr(self, "_running"):
       raise StreamuxStreamerError
 
     self._config_fname = self._build_mpd_config()
@@ -92,11 +92,12 @@ class MpdRunner(object):
                            env={})
     # Wait for the parent MPD process to fork off
     mpd.wait()
+    self._running = True
 
   def stop(self):
     """Stop the previously started MPD instance and remove its
     temporary data directory."""
-    if not hasattr(self, "_mpd"):
+    if not hasattr(self, "_running"):
       raise StreamuxStreamerError
     p = subprocess.Popen([self._mpd_bin, "--kill", self._config_fname])
     p.wait()
