@@ -69,9 +69,10 @@ class MpdRunner(object):
     directory, and return the path to the file."""
     stream_config = "audio_output {\n%s}" % self._dict_to_mpd_config(self._stream)
     config = self._dict_to_mpd_config(self._config) + stream_config
-    fd, config_fname = tempfile.mkstemp(".conf", "mpd", self._rundir, text=True)
-    os.write(fd, config)
-    os.close(fd)
+    config_fname = os.path.join(self._rundir, 'config')
+    fd = open(config_fname, 'w')
+    fd.write(config)
+    fd.close()
     return config_fname
 
   def run(self):
