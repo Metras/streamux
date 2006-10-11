@@ -69,7 +69,6 @@ class StreamuxApp(object):
                           datefmt=date_format,
                           level=logging.DEBUG,
                           stream=sys.stderr)
-      logging.info("Logging initialized in debug mode")
     else:
 
       log_levels = { 'error': logging.ERROR,
@@ -94,6 +93,7 @@ class StreamuxApp(object):
                           level=log_levels[level_str],
                           filename=self.config.get('logging', 'file'))
 
+    logging.info("Logger initialized%s" % (self.options.debug and " in debug mode" or ""))
 
   def run(self):
     self._parse_args()
