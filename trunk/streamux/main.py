@@ -8,19 +8,17 @@ import logging
 import optparse
 import ConfigParser
 
+import streamux.db
+
 __version__ = "dev build"
+
+def error_and_exit(msg):
+  """Log the given message as critical and exit with exit code 1."""
+  logging.critical(msg)
+  sys.exit(1)
 
 class StreamuxApp(object):
   """Main Streamux class. Handles application initialization."""
-
-  def error(self, msg):
-    """Log the given message as critical, or print it if logging isn't
-    yet set up, and exit with an exit code 1."""
-    if hasattr(self, "_log"):
-      self._log.critical(msg)
-    else:
-      sys.stderr.write("%s\n" % msg)
-    sys.exit(1)
 
   def _parse_args(self):
     """Parse the commandline arguments and store them in the app
@@ -49,9 +47,9 @@ class StreamuxApp(object):
     try:
       self.config.readfp(fd)
     except ConfigParser.ParsingError:
-      self.error("Parse error while reading the configuration file.")
+      error_and_exit("Parse error while reading the configuration file.")
     except ConfigParser.InterpolationError:
-      self.error("Variable interpolation error while reading the configuration file.")
+      error_and_exit("Variable interpolation error while reading the configuration file.")
 
     fd.close()
 
@@ -78,14 +76,14 @@ class StreamuxApp(object):
 
       # Check configuration
       if not self.config.has_section('logging'):
-        self.error("Section [logging] is missing from the configuration.")
+        error_and_exit("Section [logging] is missing from the configuration.")
       elif not self.options.debug and (not self.config.has_option('logging', 'level') or
                                        not self.config.has_option('logging', 'file')):
-        self.error("Missing configuration attributes for logging.")
+        error_and_exit("Missing configuration attributes for logging.")
 
       level_str = self.config.get('logging', 'level')
       if level_str not in log_levels.keys():
-        self.error("Log level must be one of: %s" % ', '.join(log_levels.keys()))
+        error_and_exit("Log level must be one of: %s" % ', '.join(log_levels.keys()))
 
       # Set up logging according to the configuration
       logging.basicConfig(format=log_format,
@@ -95,7 +93,12 @@ class StreamuxApp(object):
 
     logging.info("Logger initialized%s" % (self.options.debug and " in debug mode" or ""))
 
+  def _start_components(self):
+    """Start the components of Streamux in the correct init order."""
+    db = streamux.db.StreamuxDatabase(self.config)
+
   def run(self):
     self._parse_args()
     self._load_config()
     self._setup_logging()
+    self._start_components()
