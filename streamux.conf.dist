@@ -5,6 +5,10 @@
 file = /var/log/streamux.log
 level = info
 
+## Pointer to a database which Streamux will use for various storage needs.
+[db]
+url = sqlite:///streamux.db
+
 ## Configuration for the Streamer, the interface to drive MPD.
 [streamer]
 mpd = /path/to/the/mpd/static/build/binary
