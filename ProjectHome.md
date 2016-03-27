@@ -1,0 +1,1 @@
+Streamux is a program that manages an online radio station. It is the software component that manages a media database, decides what goes on the air, can be remotely driven by people for live events, and provides information via an XMLRPC API for integration with other programs.
